@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  jjm-app:
+    build: .
+    container_name: jjm-automation-utility
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_DRIVER=ODBC Driver 17 for SQL Server
+      - DB_SERVER=${DB_SERVER:-your_sql_server}
+      - DB_NAME=${DB_NAME:-your_database_name}
+      - DB_USER=${DB_USER:-your_username}
+      - DB_PASSWORD=${DB_PASSWORD:-your_password}
+      - PI_SERVER=${PI_SERVER:-192.168.1.115}
+      - PI_SDK_REFRENCE=OSIsoft.AFSDK
+      - PI_SYS_PATH=/opt/pi/
+      - MQTT_HOST=${MQTT_HOST:-14.99.99.166}
+      - MQTT_PORT=${MQTT_PORT:-1889}
+      - MQTT_USERNAME=${MQTT_USERNAME:-MQTT}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-Mqtt@123}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+      - ./downloads:/app/downloads
+      - ./app:/app/app:ro  # Mount for development
+    restart: unless-stopped
+    depends_on:
+      - redis
+    networks:
+      - jjm-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: jjm-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - jjm-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: jjm-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - jjm-app
+    restart: unless-stopped
+    networks:
+      - jjm-network
+
+volumes:
+  redis_data:
+
+networks:
+  jjm-network:
+    driver: bridge
