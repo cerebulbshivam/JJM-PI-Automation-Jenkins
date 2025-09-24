@@ -1,0 +1,456 @@
+{% extends "base.html" %}
+{% block content %}
+{% include 'terminal_logs.html' %}
+
+<div class="min-h-screen p-4 md:p-8">
+    <div class="mx-auto max-w-7xl">
+        
+        <!-- Header Section -->
+        <div class="mb-2 animate-fade-in flex items-center justify-between">
+            <!-- Left: Logo -->
+            <img src="/static/cb-logo-tagline-lightbg.png" 
+                alt="CereBulb Logo" 
+                class="h-12 w-auto">
+
+            <!-- Right: Heading -->
+            <div class="text-right">
+                <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
+                    JJM PI Automation
+                </h1>
+                <div class="mt-2 h-1 w-24 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full ml-auto"></div>
+            </div>
+        </div>
+
+
+        <div class="border-b border-gray-300 mb-4"></div>
+
+        <!-- Main Content Grid -->
+        <!-- Main Content -->
+    <div class="flex-1 overflow-hidden p-4">
+        <div class="grid gap-4 lg:grid-cols-3 h-full">
+            
+            <!-- Left Section: Upload Steps -->
+            <div class="lg:col-span-2 flex flex-col gap-4 overflow-y-auto pr-2">
+                
+                <!-- Step 1 -->
+                <div id="step-1" class="bg-white/90 border border-blue-200 rounded-xl shadow p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h2 class="text-xl font-semibold">Step 1: Asset Metadata</h2>
+                            <p class="text-sm text-blue-500">Upload Asset Metadata Excel</p>
+                            <p id="file-name" class="text-xs text-yellow-600 mt-1"></p>
+                        </div>
+                        <div onclick="document.getElementById('asset-metadata-file').click()" 
+                             class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-200">
+                            <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.3 6.7a1 1 0 010-1.4l3-3a1 1 0 011.4 0l3 3a1 1 0 01-1.4 1.4L11 5.4V13a1 1 0 11-2 0V5.4L7.7 6.7a1 1 0 01-1.4 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <form id="asset-metadata-form" hx-post="/ingest_asset_metadata" hx-target="#step-1-response" 
+                          hx-encoding="multipart/form-data" hx-indicator="#spinner-1">
+                        <input type="file" name="file" id="asset-metadata-file" accept=".xlsx,.xls" required class="hidden">
+
+                        <!-- Response -->
+                        <div id="step-1-response" class="mb-3">
+                            <div id="spinner-1" class="htmx-indicator flex items-center justify-center text-blue-600 text-sm">
+                                <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0..."></path>
+                                </svg>
+                                Processing...
+                            </div>
+                        </div>
+
+                        <button type="submit" id="next-step-1-btn"
+                            class="w-full bg-blue-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-blue-700 transition"
+                            hx-disable="true"
+                            hx-on="htmx:beforeRequest: this.disabled = true; this.classList.add('opacity-50', 'cursor-not-allowed'); 
+                                htmx:afterRequest: this.disabled = false; this.classList.remove('opacity-50', 'cursor-not-allowed')">
+                            Validate & Continue
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Step 2 -->
+                <div id="step-2" class="bg-white/90 border border-green-200 rounded-xl shadow p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h2 class="text-xl font-semibold">Step 2: Validation File</h2>
+                            <p class="text-sm text-green-600">Upload validation Excel</p>
+                            <p id="mqtt-file-name" class="text-xs text-yellow-600 mt-1"></p>
+                        </div>
+                        <div onclick="document.getElementById('mqtt-topics-file').click()" 
+                             class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-green-200">
+                             <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.3 6.7a1 1 0 010-1.4l3-3a1 1 0 011.4 0l3 3a1 1 0 01-1.4 1.4L11 5.4V13a1 1 0 11-2 0V5.4L7.7 6.7a1 1 0 01-1.4 0z"></path>
+                            </svg>
+                            <!-- <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M16.7 5.3a1 1 0 010 1.4l-8 8..."></path>
+                            </svg> -->
+                        </div>
+                    </div>
+                    
+                    <form id="mqtt-topics-form" hx-post="/validate_metadata" hx-target="#step-2-response" 
+                          hx-encoding="multipart/form-data" hx-indicator="#spinner-2">
+                        <input type="file" name="file" id="mqtt-topics-file" accept=".xlsx,.xls" required class="hidden">
+
+                        <!-- Response -->
+                        <div id="step-2-response" class="mb-3">
+                            <div id="spinner-2" class="htmx-indicator flex items-center justify-center text-green-600 text-sm">
+                                <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0..."></path>
+                                </svg>
+                                Processing...
+                            </div>
+                        </div>
+
+                        <button type="submit" id="next-step-2-btn"
+                            class="w-full bg-green-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-green-700 transition"
+                            hx-disable="true"
+                            hx-on="htmx:beforeRequest: this.disabled = true; this.classList.add('opacity-50', 'cursor-not-allowed'); 
+                                htmx:afterRequest: this.disabled = false; this.classList.remove('opacity-50', 'cursor-not-allowed')">
+                            Validate & Finalize
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Section: Status -->
+            <div class="lg:col-span-1 flex flex-col gap-4 overflow-y-auto">
+                <div class="bg-white/90 border rounded-xl p-2 shadow text-sm">
+                    <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-semibold text-gray-800">Automation Process</h3>
+
+                    <!-- Info button -->
+                    <div class="relative group">
+                        <button class="w-6 h-6 flex items-center justify-center rounded-full border border-gray-400 text-gray-600 hover:bg-gray-100">
+                        i
+                        </button>
+                        <!-- Tooltip -->
+                        <div class="absolute right-0 mt-2 w-64 bg-white border rounded-lg shadow-lg p-3 text-xs text-gray-600 hidden group-hover:block z-10">
+                        <p class="font-semibold mb-1">Legend for Tags creation status sheet</p>
+                        <p><span class="text-green-600 text-xl font-bold">●</span> Created successfully</p>
+                        <p><span class="text-gray-400 text-xl font-bold">●</span> Already exists</p>
+                        <p><span class="text-red-500 text-xl font-bold">●</span> Failed to create</p>
+                        </div>
+                    </div>
+                    </div>
+
+                    <div class="space-y-2">
+                    <div class="flex items-center space-x-2 p-2 bg-gray-50 rounded">
+                        <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+                        <span>Step 1: Upload Asset Metadata</span>
+                    </div>
+                    <div class="flex items-center space-x-2 p-2 bg-gray-50 rounded">
+                        <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+                        <span>Step 2: Upload Validation File</span>
+                    </div>
+                    <div class="flex items-center space-x-2 p-2 bg-gray-50 rounded">
+                        <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+                        <span>Step 3: Final Tag Submission & JSON Update</span>
+                    </div>
+                    </div>
+                </div>
+
+                <div id="final-submit-step" class="bg-white/90 border rounded-xl shadow p-4" hidden>
+                    <h3 class="font-semibold text-gray-800 mb-3">Final Data Processing</h3>
+                    <button id="submit-all-btn"
+                        hx-post="/final_upload"
+                        hx-target="#final-upload-response"
+                        hx-swap="innerHTML"
+                        hx-indicator="#spinner-final"
+                        class="w-full bg-purple-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-purple-700 transition cursor-not-allowed">
+                    Final Step
+                </button>
+                    <div id="final-upload-response" class="mt-2 text-xs text-gray-600">
+                        <div id="spinner-final" class="htmx-indicator flex items-center justify-center">
+                            <svg class="animate-spin h-4 w-4 mr-2 text-purple-600" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0..."></path>
+                            </svg>
+                            <span id="processing-text">Processing final step...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+</div>
+
+<!-- Log Modal will be included from modal.html -->
+
+<!-- Enhanced JavaScript -->
+<!-- <script>
+    // Log Modal functionality
+    
+    const showLogsBtn = document.getElementById('show-logs-btn');
+    const submitAllBtn = document.getElementById('submit-all-btn');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const logContent = document.getElementById('log-content');
+    let ws;
+
+
+
+    function connectWebSocket() {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            return; // Already connected
+        }
+        
+        ws = new WebSocket(`ws://${window.location.host}/ws/logs`);
+        
+        ws.onopen = function() {
+            logContent.innerHTML = '<div class="text-green-400">Connected to log stream.</div>';
+        };
+        
+        ws.onmessage = function(event) {
+            const logLine = event.data;
+            
+            // Color-code different log levels
+            let logClass = 'text-gray-300';
+            if (logLine.includes(' INFO ')) logClass = 'text-blue-400';
+            if (logLine.includes(' WARNING ')) logClass = 'text-yellow-400';
+            if (logLine.includes(' ERROR ')) logClass = 'text-red-400';
+            if (logLine.includes('=====')) logClass = 'text-purple-400 font-bold'; // For section headers
+            
+            logContent.innerHTML += `<div class="${logClass}">${logLine}</div>`;
+            logContent.scrollTop = logContent.scrollHeight;
+        };
+        
+        ws.onclose = function() {
+            logContent.innerHTML += '<div class="text-yellow-400">Connection closed. Reconnecting...</div>';
+            setTimeout(connectWebSocket, 1000);
+        };
+        
+        ws.onerror = function(error) {
+            logContent.innerHTML += '<div class="text-red-400">WebSocket Error. Check console for details.</div>';
+            console.error('WebSocket error:', error);
+        };
+    }
+
+    // Show logs when "Show Live Logs" button is clicked
+    if (showLogsBtn) {
+        showLogsBtn.addEventListener('click', showModal);
+    }
+
+    // Show logs when "Submit All Files" button is clicked
+    if (submitAllBtn) {
+        submitAllBtn.addEventListener('click', function(e) {
+            showModal(); // Show modal first
+        });
+    }
+
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', () => {
+            if (logModal) {
+                logModal.classList.add('hidden');
+            }
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                websocket.close();
+            }
+        });
+    }
+
+    // Close modal if clicked outside
+    window.addEventListener('click', (event) => {
+        if (event.target === logModal) {
+            if (logModal) {
+                logModal.classList.add('hidden');
+            }
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                websocket.close();
+            }
+        }
+    });
+</script> -->
+
+<!-- HTMX event handlers -->
+<script>
+document.body.addEventListener('htmx:beforeRequest', function(evt) {
+    const target = evt.detail.elt;
+    
+    // If it's the final submit button, show the log modal and connect WebSocket
+    if (target.id === 'submit-all-btn' || target.closest('#final-submit-step')) {
+        showModal();
+        if (window.connectTerminalWebSocket) {
+            window.connectTerminalWebSocket();
+        }
+    }
+});
+
+document.body.addEventListener('htmx:afterOnLoad', function(evt) {
+    const targetId = evt.detail.target.id;
+    
+    if (targetId === "step-1-response") {
+        const step1Response = evt.detail.xhr.responseText;
+        
+        if (step1Response.includes("Asset Metadata processed successfully")) {
+            // Enable Step 2
+            const step2Div = document.getElementById("step-2");
+            if (step2Div) {
+                step2Div.classList.remove("opacity-60", "pointer-events-none");
+                step2Div.classList.add("animate-fade-in");
+            }
+            
+            showSuccessMessage("Step 1 completed successfully! ✨");
+        }
+    }
+    
+    if (targetId === "step-2-response") {
+        const step2Response = evt.detail.xhr.responseText;
+        
+        if (step2Response.includes("Verification & DB Updation Completed") || step2Response.includes("Validation completed")) {
+            // Show final submission
+            const finalSubmitDiv = document.getElementById("final-submit-step");
+            if (finalSubmitDiv) {
+                finalSubmitDiv.hidden = false;
+                finalSubmitDiv.classList.add("animate-slide-up");
+                finalSubmitDiv.removeAttribute('hidden');
+            }
+            
+            showSuccessMessage("All steps completed! Ready for final submission 🎉");
+        }
+    }
+
+    // Disconnect WebSocket after final upload completes
+    if (targetId === "final-upload-response") {
+        if (window.disconnectTerminalWebSocket) {
+            window.disconnectTerminalWebSocket();
+        }
+    }
+});
+
+// Loading state management
+document.body.addEventListener('htmx:beforeRequest', function(evt) {
+    const form = evt.detail.elt.closest('form');
+    if (form) {
+        const button = form.querySelector('button[type="submit"]');
+        if (button) { // Check if button exists
+            button.disabled = true;
+            button.classList.add('opacity-75', 'cursor-not-allowed');
+        }
+    }
+});
+
+document.body.addEventListener('htmx:afterRequest', function(evt) {
+    const form = evt.detail.elt.closest('form');
+    if (form) {
+        const button = form.querySelector('button[type="submit"]');
+        if (button) { // Check if button exists
+            button.disabled = false;
+            button.classList.remove('opacity-75', 'cursor-not-allowed');
+        }
+    }
+});
+
+// Success message helper
+function showSuccessMessage(message) {
+    const toast = document.createElement('div');
+    toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slide-up';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('animate-fade-out');
+        setTimeout(() => document.body.removeChild(toast), 300);
+    }, 3000);
+}
+</script>
+
+<!-- JS to update filename -->
+<script>
+  document.getElementById('asset-metadata-file').addEventListener('change', function () {
+    const fileName = this.files.length ? this.files[0].name : '';
+    document.getElementById('file-name').textContent = fileName ? `Selected: ${fileName}` : '';
+  });
+</script>
+
+<!-- JS to update filename -->
+<script>
+  document.getElementById('mqtt-topics-file').addEventListener('change', function () {
+    const fileName = this.files.length ? this.files[0].name : '';
+    document.getElementById('mqtt-file-name').textContent = fileName ? `Selected: ${fileName}` : '';
+  });
+</script>
+
+<script>
+document.body.addEventListener('htmx:beforeRequest', function(evt) {
+    const target = evt.detail.elt; // the element that triggered the request
+
+    if (target.closest("#asset-metadata-form")) {
+        const resp = document.getElementById("step-1-response");
+        if (resp) { // Check if resp exists
+            resp.innerHTML = `<div id="spinner-1" class="htmx-indicator mt-1 text-blue-600 flex items-center justify-center">
+                            <svg class="animate-spin h-4 w-4 mr-2 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Processing...
+                        </div>`;
+        }
+    }
+    if (target.closest("#mqtt-topics-form")) {
+        const resp = document.getElementById("step-2-response");
+        if (resp) { // Check if resp exists
+            resp.innerHTML = `<div id="spinner-2" class="htmx-indicator mt-1 text-green-600 flex items-center justify-center">
+                            <svg class="animate-spin h-4 w-4 mr-2 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Processing...
+                        </div>`;
+        }
+        // 🔹 Clear final submission response when new Step 2 validation starts
+        const finalResp = document.getElementById("final-upload-response");
+        if (finalResp) {
+            finalResp.innerHTML = "";
+        }
+    }
+    if (target.closest("#final-submit-step")) {
+        const resp = document.getElementById("final-upload-response");
+        if (resp) { // Check if resp exists
+            resp.innerHTML = `<div id="spinner-final" class="htmx-indicator mt-1 text-purple-600 flex items-center justify-center">
+                        <svg class="animate-spin h-4 w-4 mr-2 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span id="processing-text">Processing final step...</span>
+                    </div>`;
+        }
+    }
+});
+</script>
+
+<script>
+    function startFinalUploadTimer(durationSeconds = 70) {
+    const timerSpan = document.getElementById("timer");
+    if (!timerSpan) return;
+
+    let timeLeft = durationSeconds;
+    timerSpan.textContent = timeLeft;
+
+    const interval = setInterval(() => {
+        timeLeft -= 1;
+        timerSpan.textContent = timeLeft;
+
+        if (timeLeft <= 0) {
+            clearInterval(interval);
+            // Optional: update text when done
+            const processingText = document.getElementById("processing-text");
+            if (processingText) {
+                processingText.textContent = "Processing completed!";
+            }
+        }
+    }, 1000);
+}
+
+// Trigger timer when the submit button is clicked
+document.getElementById("submit-all-btn").addEventListener("click", () => {
+    startFinalUploadTimer(70);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,217 @@
+<!-- Terminal-style Log Viewer -->
+<div id="terminal-log-viewer" class="fixed bottom-0 right-0 transform translate-y-full transition-transform duration-300 ease-in-out z-50 bg-gray-900 border-t border-l border-gray-700 flex flex-col" 
+     style="width: 100%; max-height: 90vh;">
+
+     <!-- Resizer bar (drag to resize) -->
+    <div id="terminal-resizer" class="h-2 bg-gray-700 cursor-row-resize"></div>
+
+    <!-- Header with controls -->
+    <div class="flex justify-between items-center px-4 py-2 bg-gray-800 border-b border-gray-700">
+        <div class="flex items-center space-x-4">
+            <h3 class="text-sm font-medium text-white">Process Logs</h3>
+            <div class="flex space-x-2">
+                <button id="clear-logs-btn" class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded">
+                    Clear
+                </button>
+                <button id="auto-scroll-btn" class="text-xs bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded">
+                    Auto-scroll: ON
+                </button>
+                <button id="fullscreen-btn" class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button id="minimize-logs-btn" class="text-gray-400 hover:text-white p-1">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Log content area -->
+    <div id="log-content" class="font-mono text-sm overflow-y-auto bg-gray-900 p-4 flex-grow">
+        <div class="space-y-1">
+            <div class="text-green-400">Live Logging functionality coming soon...</div>
+            <!-- <div class="text-green-400">Terminal ready. Waiting for process logs...</div> -->
+        </div>
+    </div>
+</div>
+
+<!-- Terminal Toggle Button -->
+<!-- <button id="toggle-terminal-btn" 
+        class="fixed bottom-4 right-4 bg-gray-800 text-white p-2 rounded-full shadow-lg hover:bg-gray-700 transition-colors z-50">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+    </svg>
+</button> -->
+
+<script>
+    let autoScroll = true;
+    let isFullscreen = false;
+    let ws = null;
+    let reconnectTimer = null;
+
+    const terminalViewer = document.getElementById('terminal-log-viewer');
+    const logContent = document.getElementById('log-content');
+    const toggleBtn = document.getElementById('toggle-terminal-btn');
+    const minimizeBtn = document.getElementById('minimize-logs-btn');
+    const clearLogsBtn = document.getElementById('clear-logs-btn');
+    const autoScrollBtn = document.getElementById('auto-scroll-btn');
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+
+    
+    const resizer = document.getElementById('terminal-resizer');
+
+    let isResizing = false;
+
+    resizer.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        document.body.style.cursor = 'row-resize';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        
+        const windowHeight = window.innerHeight;
+        const newHeight = windowHeight - e.clientY; // distance from bottom
+        if (newHeight > 100 && newHeight < windowHeight * 0.95) { // clamp min/max
+            terminalViewer.style.height = `${newHeight}px`;
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        isResizing = false;
+        document.body.style.cursor = '';
+    });
+
+
+    function appendLog(htmlContent) {
+        const container = logContent.querySelector('div');
+        container.insertAdjacentHTML('beforeend', htmlContent);
+        
+        if (autoScroll) {
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+    }
+
+    // function connectWebSocket() {
+    //     if (ws && ws.readyState === WebSocket.OPEN) {
+    //         return; // Already connected
+    //     }
+        
+    //     if (reconnectTimer) {
+    //         clearTimeout(reconnectTimer);
+    //         reconnectTimer = null;
+    //     }
+
+        // ws = new WebSocket(`ws://${window.location.host}/ws/logs`);
+        
+        // ws.onopen = function() {
+        //     appendLog('<div class="text-green-400">Connected to log stream.</div>');
+        //     console.log('WebSocket connected');
+        // };
+        
+        // ws.onmessage = function(event) {
+        //     const logLine = event.data;
+        //     let logClass = 'text-gray-300';
+            
+        //     if (logLine.includes(' INFO ')) logClass = 'text-blue-400';
+        //     else if (logLine.includes(' WARNING ')) logClass = 'text-yellow-400';
+        //     else if (logLine.includes(' ERROR ')) logClass = 'text-red-400';
+        //     else if (logLine.includes('=====')) logClass = 'text-purple-400 font-bold';
+            
+        //     appendLog(`<div class="${logClass}">${logLine}</div>`);
+        // };
+        
+        // ws.onclose = function() {
+        //     appendLog('<div class="text-yellow-400">Connection closed. Reconnecting...</div>');
+        //     ws = null;
+        //     // Reconnect only if the terminal is visible
+        //     if (!terminalViewer.classList.contains('translate-y-full')) {
+        //         reconnectTimer = setTimeout(connectWebSocket, 1000);
+        //     }
+        // };
+        
+        // ws.onerror = function(error) {
+        //     console.error('WebSocket error:', error);
+        //     appendLog('<div class="text-red-400">Connection error. Will attempt to reconnect...</div>');
+            
+        //     if (ws) {
+        //         ws.close();
+        //         ws = null;
+        //     }
+        // };
+    // }
+
+    // function disconnectWebSocket() {
+    //     if (ws) {
+    //         ws.close();
+    //         ws = null;
+    //     }
+    //     if (reconnectTimer) {
+    //         clearTimeout(reconnectTimer);
+    //         reconnectTimer = null;
+    //     }
+    // }
+
+    function toggleTerminal() {
+        terminalViewer.classList.toggle('translate-y-full');
+        // The WebSocket connection is now solely managed by upload.html
+        // No need to connect or close here.
+    }
+
+    function toggleFullscreen() {
+        isFullscreen = !isFullscreen;
+        if (isFullscreen) {
+            terminalViewer.style.height = '100vh';
+            terminalViewer.style.width = '100vw';
+            terminalViewer.style.maxHeight = '100vh';
+        } else {
+            terminalViewer.style.height = '';
+            terminalViewer.style.width = '100%';
+            terminalViewer.style.maxHeight = '90vh';
+        }
+    }
+
+    // Event Listeners
+    toggleBtn.addEventListener('click', toggleTerminal);
+    minimizeBtn.addEventListener('click', toggleTerminal);
+    
+    clearLogsBtn.addEventListener('click', () => {
+        const container = logContent.querySelector('div');
+        container.innerHTML = '<div class="text-green-400">Logs cleared.</div>';
+    });
+    
+    autoScrollBtn.addEventListener('click', () => {
+        autoScroll = !autoScroll;
+        autoScrollBtn.textContent = `Auto-scroll: ${autoScroll ? 'ON' : 'OFF'}`;
+        autoScrollBtn.classList.toggle('bg-blue-600');
+        autoScrollBtn.classList.toggle('bg-gray-600');
+        if (autoScroll) {
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+    });
+    
+    fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+    // Expose connect/disconnect functions globally for upload.html
+    window.connectTerminalWebSocket = connectWebSocket;
+    window.disconnectTerminalWebSocket = disconnectWebSocket;
+    window.appendTerminalLog = appendLog;
+
+    // Show terminal automatically when "Submit All Files" is clicked
+    // document.addEventListener('DOMContentLoaded', function() {
+    //     const submitBtn = document.getElementById('submit-all-btn');
+    //     if (submitBtn) {
+    //         submitBtn.addEventListener('click', function() {
+    //             if (terminalViewer.classList.contains('translate-y-full')) {
+    //                 toggleTerminal();
+    //             }
+    //         });
+    //     }
+    // });
+</script>
