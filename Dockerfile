@@ -1,56 +1,29 @@
-# Use Python 3.9 slim image as base
-FROM python:3.9-slim
+# Use official Python base image
+FROM python:3.12-slim
 
-# Set working directory
+# Set work directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies for SQL Server ODBC
 RUN apt-get update && apt-get install -y \
-    curl \
-    unixodbc \
     unixodbc-dev \
-    odbcinst \
-    odbcinst1debian2 \
-    libodbc1 \
     gcc \
     g++ \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Microsoft ODBC Driver 17 for SQL Server
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && curl https://packages.microsoft.com/config/debian/10/prod.list > /etc/apt/sources.list.d/mssql-release.list \
-    && apt-get update \
-    && ACCEPT_EULA=Y apt-get install -y msodbcsql17 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements first for better caching
+# Copy requirements
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+# Install dependencies
+RUN pip install --upgrade pip \
+    && pip install -r requirements.txt
 
-# Copy application code
-COPY app/ ./app/
-# COPY static/ ./static/ 2>/dev/null || echo "No static directory to copyy"
+# Copy project files
+COPY . .
 
-# Create necessary directories
-RUN mkdir -p /app/data /app/logs /app/uploads /app/downloads
+# Expose port 9000
+EXPOSE 9000
 
-# Create non-root user for security
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
-USER appuser
-
-# Expose port
-EXPOSE 8000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8000/ || exit 1
-
-# Set environment variables
-ENV PYTHONPATH=/app
-ENV PYTHONUNBUFFERED=1
-
-# Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "9000", "--workers", "1"]
+# Use production env file
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "9000"]
